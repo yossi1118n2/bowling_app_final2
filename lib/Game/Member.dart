@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'GameHome.dart';
+
 
 class Member extends StatefulWidget {
   const Member({Key? key}) : super(key: key);
@@ -42,7 +44,10 @@ class _MemberState extends State<Member> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           // Add your onPressed code here!
-          Navigator.of(context).pop();
+          Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => GameHome( Player, _isChecked,_hdcp),
+          ));
         },
         label: const Text('ゲーム開始'),
         icon: const Icon(Icons.start),
