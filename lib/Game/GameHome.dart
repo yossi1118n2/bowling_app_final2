@@ -6,6 +6,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:data_table_2/data_table_2.dart';
+
 class GameHome extends StatefulWidget {
   List<String> PlayerItem;
   List<bool> _isChecked;
@@ -26,6 +28,7 @@ class _GameHomeState extends State<GameHome> {
   int _gamecount = 1;
 
   bool _printPoint = false;
+
   bool _nextgame = false;
   List<List<int>> _scoreArray = List.generate(0, (_) => List.generate(0, (_) => 0));
   List<int> _tempScoreArray = [];
@@ -41,11 +44,26 @@ class _GameHomeState extends State<GameHome> {
   List<bool> _printWinIndex = [];
   List<bool> _printLoseIndex = [];
 
+  List<DataRow> _printScoreRow = [];
+  List<DataRow> _printHdcpScoreRow = [];
+  List<DataRow> _printPointRow = [];
+
+  List<DataRow> _switchRow = [];
+
+  List<DataColumn> _printPlayerColumn = [];
+
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+
+    _printPlayerColumn.add(
+      DataColumn(
+        label: Text('ゲーム数'),
+      ),
+    );
+    _switchRow = _printScoreRow;
     for(var i=0;i<widget.PlayerItem.length;i++){
       if(widget._isChecked[i] == true){
         _ParticipationPlayer.add(widget.PlayerItem[i]);
@@ -55,6 +73,11 @@ class _GameHomeState extends State<GameHome> {
         _tempTeamArray.add('--');
         _printWinIndex.add(false);
         _printLoseIndex.add(false);
+        _printPlayerColumn.add(
+          DataColumn(
+            label: Text('${_ParticipationPlayer[i]} \n (${_ParticipationHdcp[i]})'),
+          ),
+        );
       }
     }
   }
@@ -65,11 +88,15 @@ class _GameHomeState extends State<GameHome> {
     List<int> _onetimetempPointArray = List.generate(_tempPointArray.length, (_) => 0);
     List<String> _onetimetempTeamArray = List.generate(_tempTeamArray.length, (_) => '--');
 
+    int _onetimeGameCount = 0;
+
     for(var i=0;i<_tempScoreArray.length;i++){
       _onetimetempScoreArray[i] = _tempScoreArray[i];
       _onetimetempPointArray[i] = _tempPointArray[i];
       _onetimetempTeamArray[i] = _tempTeamArray[i];
      }
+
+    _onetimeGameCount = _gamecount;
     setState(() {
       _scoreArray.add(_onetimetempScoreArray);
       _pointArray.add(_onetimetempPointArray);
@@ -77,7 +104,40 @@ class _GameHomeState extends State<GameHome> {
       print(_scoreArray);
       print(_pointArray);
       print(_teamArray);
+
+      _printPointRow.add(
+          DataRow(cells: [
+            DataCell(Text('Game${_onetimeGameCount}')),
+          ]),
+      );
+      _printScoreRow.add(
+        DataRow(cells: [
+          DataCell(Text('Game${_onetimeGameCount}')),
+        ]),
+      );
+      _printHdcpScoreRow.add(
+        DataRow(cells: [
+          DataCell(Text('Game${_onetimeGameCount}')),
+        ]),
+      );
+
+      for(var i=0;i<_onetimetempPointArray.length;i++){
+
+        _printScoreRow[_scoreArray.length - 1].cells.add(
+          DataCell(Text('${_onetimetempScoreArray[i]}')),
+        );
+
+        _printHdcpScoreRow[_scoreArray.length - 1].cells.add(
+          DataCell(Text('${_onetimetempPointArray[i] + _ParticipationHdcp[i]}')),
+        );
+
+        _printPointRow[_pointArray.length - 1].cells.add(
+          DataCell(Text('${_onetimetempPointArray[i]}')),
+        );
+      }
     });
+
+
     //teamのリセット処理
     for(var i=0;i<_tempTeamArray.length;i++){
       _tempTeamArray[i] = '--';
@@ -86,6 +146,10 @@ class _GameHomeState extends State<GameHome> {
       _printWinIndex[i] = false;
       _printLoseIndex[i] = false;
     }
+
+    setState(() {
+      _gamecount += 1;
+    });
   }
 
   void calculatePointFunc(){
@@ -200,6 +264,11 @@ class _GameHomeState extends State<GameHome> {
             onChanged: (value) {
               setState(() {
                 _printPoint = value;
+                if(value){
+                  _switchRow = _printPointRow;
+                }else{
+                  _switchRow = _printScoreRow;
+                }
               });
             },
           ),
@@ -211,80 +280,92 @@ class _GameHomeState extends State<GameHome> {
           }),
         ],
       ),
-      body: Container(
-        width: 300,
-        height: 800,
-        child: Column(
-          children: [
-            Container(
-              width: 300,
-              height: 30,
-              child: Row(
-                children: [
-                  Text("Players "),
-                  SizedBox(
-                    width: 240,
-                    height: 30,
-                    child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _ParticipationPlayer.length,
-                        itemBuilder: (context, index) {
-                          return Text(
-                            '${_ParticipationPlayer[index]}\n(${_ParticipationHdcp[index]}) ',
-                            style: TextStyle(fontSize: 10),);
-                        }
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: 300,
-              height: 700,
-              child: ListView.builder(
-                  itemCount: _scoreArray.length,
-                  itemBuilder: (context, gameNumber) {
-                    return Container(
-                      width: 300,
-                      height: 30,
-
-                      child: Row(
-                        children: [
-                          Text("第${gameNumber + 1}ゲーム  "),
-                          SizedBox(
-                            width: 220,
-                            height: 30,
-                            child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: _scoreArray[gameNumber].length,
-                                itemBuilder: (context, index) {
-                                  if(_printPoint){
-                                    return Text(
-                                      '${_pointArray[gameNumber][index]}  ',
-                                      style: TextStyle(fontSize: 10),
-                                    );
-
-                                  }else{
-                                    return Text(
-                                      '${_scoreArray[gameNumber][index]}  ',
-                                      style: TextStyle(fontSize: 10),
-                                    );
-                                  }
-                                }
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                    //縦軸にゲームnombuer,横軸にplayer名
-                    //floating buttonを押したらポップアップ
-                    //ポップアップの画面切り替えの仕方を調べる必要がある
-                  }
-              ),
-            ),
-          ],
+      body: SingleChildScrollView(
+        child:DataTable(
+          columns: _printPlayerColumn,
+          rows: _switchRow,
         ),
       ),
+
+
+      // dataTableを使わずに自力で実装したやつ
+      // ListView.builderをネストして表を実装した.
+      //ContainerとかSizedboxをうまく使ってバグが起こらないようにした
+      //いい勉強になった.
+      // body: Container(
+      //   width: 300,
+      //   height: 800,
+      //   child: Column(
+      //     children: [
+      //       Container(
+      //         width: 300,
+      //         height: 30,
+      //         child: Row(
+      //           children: [
+      //             Text("Players "),
+      //             SizedBox(
+      //               width: 240,
+      //               height: 30,
+      //               child: ListView.builder(
+      //                   scrollDirection: Axis.horizontal,
+      //                   itemCount: _ParticipationPlayer.length,
+      //                   itemBuilder: (context, index) {
+      //                     return Text(
+      //                       '${_ParticipationPlayer[index]}\n(${_ParticipationHdcp[index]}) ',
+      //                       style: TextStyle(fontSize: 10),);
+      //                   }
+      //               ),
+      //             ),
+      //           ],
+      //         ),
+      //       ),
+      //       Container(
+      //         width: 300,
+      //         height: 700,
+      //         child: ListView.builder(
+      //             itemCount: _scoreArray.length,
+      //             itemBuilder: (context, gameNumber) {
+      //               return Container(
+      //                 width: 300,
+      //                 height: 30,
+      //
+      //                 child: Row(
+      //                   children: [
+      //                     Text("第${gameNumber + 1}ゲーム  "),
+      //                     SizedBox(
+      //                       width: 220,
+      //                       height: 30,
+      //                       child: ListView.builder(
+      //                           scrollDirection: Axis.horizontal,
+      //                           itemCount: _scoreArray[gameNumber].length,
+      //                           itemBuilder: (context, index) {
+      //                             if(_printPoint){
+      //                               return Text(
+      //                                 '${_pointArray[gameNumber][index]}  ',
+      //                                 style: TextStyle(fontSize: 10),
+      //                               );
+      //
+      //                             }else{
+      //                               return Text(
+      //                                 '${_scoreArray[gameNumber][index]}  ',
+      //                                 style: TextStyle(fontSize: 10),
+      //                               );
+      //                             }
+      //                           }
+      //                       ),
+      //                     ),
+      //                   ],
+      //                 ),
+      //               );
+      //               //縦軸にゲームnombuer,横軸にplayer名
+      //               //floating buttonを押したらポップアップ
+      //               //ポップアップの画面切り替えの仕方を調べる必要がある
+      //             }
+      //         ),
+      //       ),
+      //     ],
+      //   ),
+      // ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           showDialog(
@@ -317,7 +398,9 @@ class _GameHomeState extends State<GameHome> {
                                         keyboardType: TextInputType.number,
                                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                         onChanged: (score){
+                                          setState(() {
                                             _tempScoreArray[index]= int.parse(score);
+                                          });
                                         },
 
                                       )
@@ -432,7 +515,6 @@ class _GameHomeState extends State<GameHome> {
                                   FlatButton(
                                       child: Text("OK"),
                                       onPressed: (){
-                                        _gamecount += 1;
                                         _nextGameFunc();
                                         Navigator.of(context, rootNavigator: true).pop();
                                       }
