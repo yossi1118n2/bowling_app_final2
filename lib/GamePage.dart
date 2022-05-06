@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'Game/Member.dart';
-import 'Game/NoGame.dart';
 import 'Game/ProgressGame.dart';
+
 
 //TODO: 画面遷移の時にデータをどうやってやり取りするかを考え中
 //今のところProviderをうまく使えないかを考えている
@@ -13,62 +13,70 @@ import 'Game/ProgressGame.dart';
 //githubのコードを読んでいる(以下の2つ)
 //https://github.com/rinoguchi/study_timer/blob/0238aa987e11e17e48ee7673a529ffe6d9d796cd/lib/main.dart
 //https://github.com/rinoguchi/study_timer/blob/0238aa987e11e17e48ee7673a529ffe6d9d796cd/lib/timeKeeper.dart
-class GameData extends ChangeNotifier{
+
+//Changenotifierを継承すると変更可能なデータを渡せる.
+class GameData{
   int _gameStatus = 0;
 
-  void changeStatus(int status) {
-    _gameStatus = status;
-    // 値が変更したことを知らせる
-    //  >> UIを再構築する
-    notifyListeners();
-  }
 
   //現在開催中のmatchがあるかどうかを調べる
 
-  void _isMatchProgress(){
+  Future<void> isMatchProgress()async {
     //日付を取得(後で書き換える)
-    int date = 20220505;
+    int date = 20220506;
+    print("isMatchProgress");
 
     //firestoreからデータを取得
     FirebaseFirestore.instance.collection('Match')
         .snapshots().listen((QuerySnapshot snapshot) {
       snapshot.docs.forEach((doc) {
-        print(doc.get('name'));
         if(doc.get('date') == date){
           if(doc.get('onGoing') == true){
             //ゲームが進行中
             _gameStatus = 1;
+            print("試合中${_gameStatus}");
           }else{
             //今日のゲームはもう終わっている
             _gameStatus = 2;
+            print("試合終わり");
           }
         }else{
           //本日はまだ開催されていない
           _gameStatus = 0;
+          print("データなし");
         }
       });
     });
-    notifyListeners();
+    print("inmatch${_gameStatus}");
   }
 
 }
 
 class GamePage extends StatelessWidget {
+  int _gameStatus = 0;
+  GameData _data = GameData();
+
   var _gameStatuspages = <Widget>[
     NoGame(),
     ProgressGame(),
+    NoGame(),
   ];
+
+
+
   @override
   Widget build(BuildContext context) {
+    _data.isMatchProgress();
+    print("inbuld-${_data._gameStatus}");
+
+    print("${GameData()._gameStatus}");
     return MaterialApp(
         title: 'Study Timer', // Webアプリとして実行した際のページタイトル
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: ChangeNotifierProvider(
-          create: (context) => GameData(),
-          child: NoGame(),
-        ));
+        home: _gameStatuspages[_data._gameStatus],
+    );
   }
 }
 
@@ -93,6 +101,7 @@ class _NoGameState extends State<NoGame> {
   //     });
   //   });
   // }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

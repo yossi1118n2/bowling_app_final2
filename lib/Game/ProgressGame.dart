@@ -10,6 +10,8 @@ class ProgressGame extends StatefulWidget {
 class _ProgressGameState extends State<ProgressGame> {
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return Container(
+      child: Text('ゲーム進行中'),
+    );
   }
 }
