@@ -1,9 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
 import 'Game/Member.dart';
 import 'Game/ProgressGame.dart';
+import 'package:riverpod/riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import 'Provider.dart';
+
+
 
 
 //TODO: 画面遷移の時にデータをどうやってやり取りするかを考え中
@@ -14,47 +22,50 @@ import 'Game/ProgressGame.dart';
 //https://github.com/rinoguchi/study_timer/blob/0238aa987e11e17e48ee7673a529ffe6d9d796cd/lib/main.dart
 //https://github.com/rinoguchi/study_timer/blob/0238aa987e11e17e48ee7673a529ffe6d9d796cd/lib/timeKeeper.dart
 
+
+
 //Changenotifierを継承すると変更可能なデータを渡せる.
-class GameData{
-  int _gameStatus = 0;
+// class GameData extends ChangeNotifier{
+//   int _gameStatus = 0;
+//
+//   //現在開催中のmatchがあるかどうかを調べる
+//
+//   Future<void> isMatchProgress()async {
+//     //日付を取得(後で書き換える)
+//     int date = 20220505;
+//     bool isMatchflag = false;
+//     print("isMatchProgress");
+//
+//     //firestoreからデータを取得
+//     await FirebaseFirestore.instance.collection('Match')
+//         .snapshots().listen((QuerySnapshot snapshot) {
+//       snapshot.docs.forEach((doc) {
+//         if(doc.get('date') == date){
+//           if(doc.get('onGoing') == true){
+//             //ゲームが進行中
+//             _gameStatus = 1;
+//             print("試合中${_gameStatus}");
+//             isMatchflag = true;
+//           }else{
+//             //今日のゲームはもう終わっている
+//             _gameStatus = 2;
+//             print("試合終わり");
+//             isMatchflag = true;
+//           }
+//         }
+//       });
+//     });
+//     if(isMatchflag == false){
+//       _gameStatus = 0;
+//       print("データなし");
+//     }
+//     print("inmatch${_gameStatus}");
+//     notifyListeners();
+//   }
+//
+// }
 
-
-  //現在開催中のmatchがあるかどうかを調べる
-
-  Future<void> isMatchProgress()async {
-    //日付を取得(後で書き換える)
-    int date = 20220506;
-    print("isMatchProgress");
-
-    //firestoreからデータを取得
-    FirebaseFirestore.instance.collection('Match')
-        .snapshots().listen((QuerySnapshot snapshot) {
-      snapshot.docs.forEach((doc) {
-        if(doc.get('date') == date){
-          if(doc.get('onGoing') == true){
-            //ゲームが進行中
-            _gameStatus = 1;
-            print("試合中${_gameStatus}");
-          }else{
-            //今日のゲームはもう終わっている
-            _gameStatus = 2;
-            print("試合終わり");
-          }
-        }else{
-          //本日はまだ開催されていない
-          _gameStatus = 0;
-          print("データなし");
-        }
-      });
-    });
-    print("inmatch${_gameStatus}");
-  }
-
-}
-
-class GamePage extends StatelessWidget {
-  int _gameStatus = 0;
-  GameData _data = GameData();
+class GamePage extends  ConsumerWidget{
 
   var _gameStatuspages = <Widget>[
     NoGame(),
@@ -63,19 +74,20 @@ class GamePage extends StatelessWidget {
   ];
 
 
-
   @override
-  Widget build(BuildContext context) {
-    _data.isMatchProgress();
-    print("inbuld-${_data._gameStatus}");
+  Widget build(BuildContext context, WidgetRef ref) {
+    int gameStatus = ref.watch(gameStateProvider);
+    var list = ref.watch(gameStateStreamProvider);
+    var gamelist = ref.watch(gameDataStreamProvider);
 
-    print("${GameData()._gameStatus}");
+    print("${list}");
+    print("${gameStatus}");
     return MaterialApp(
         title: 'Study Timer', // Webアプリとして実行した際のページタイトル
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: _gameStatuspages[_data._gameStatus],
+        home: _gameStatuspages[gameStatus],
     );
   }
 }
